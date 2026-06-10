@@ -10,6 +10,7 @@ from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from users.models import User
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import UserSerializer, RegisterSerializer
 
@@ -83,11 +84,12 @@ class ActivateUserView(APIView):
         user.save()
         cache.delete(f"activation_otp_{email}")
         
-        token, created = Token.objects.get_or_create(user=user)
+        refresh = RefreshToken.for_user(user)
+        
         return Response({
             "detail": "Account activated successfully.",
-            "token": token.key,
-            "token": token.key,
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
             "user": UserSerializer(user, context={"request": request}).data
         }, status=status.HTTP_200_OK)
 
