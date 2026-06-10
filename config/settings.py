@@ -164,3 +164,7 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
 }
+
+# MQTT Configuration
+MQTT_BROKER_HOST = "localhost"
+MQTT_BROKER_PORT = 1883
