@@ -40,6 +40,11 @@ class HealthStatus(models.Model):
     # Automatically records the exact date and time the prediction was made.
     prediction_timestamp = models.DateTimeField(auto_now_add=True)
 
+    # --- System Performance Metrics (Section 3.5) ---
+    processing_latency_ms = models.FloatField(_("Processing Latency (ms)"), null=True, blank=True)
+    cpu_load_percent = models.FloatField(_("CPU Load (%)"), null=True, blank=True)
+    ram_allocation_mb = models.FloatField(_("RAM Allocation (MB)"), null=True, blank=True)
+
     class Meta:
         verbose_name = _("Health Status")
         verbose_name_plural = _("Health Statuses")

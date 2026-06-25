@@ -1,3 +1,5 @@
+import time
+import psutil
 from inventory.models import Equipment
 from telemetry.models import HealthStatus
 from telemetry.models import SensorReading
@@ -36,10 +38,20 @@ def evaluate_equipment_health_task():
             # We don't have enough data to make an ML prediction yet
             continue
 
+        # --- Track Performance Metrics (Section 3.5) ---
+        start_time = time.perf_counter()
+        
         # 6. Ask the ML model for a prediction
         # 'score' is a number (negative = bad, positive = good)
         # 'is_anomaly' is a simple True/False
         score, is_anomaly = detector.train_and_predict(recent_list)
+
+        end_time = time.perf_counter()
+        processing_latency_ms = (end_time - start_time) * 1000.0
+        
+        cpu_load_percent = psutil.cpu_percent(interval=None)
+        # Convert used memory to MB
+        ram_allocation_mb = psutil.virtual_memory().used / (1024 * 1024)
 
         # 7. Convert the ML score into a Human-Readable Status
         if score < -0.15:
@@ -58,8 +70,14 @@ def evaluate_equipment_health_task():
             # Positive score means everything is running perfectly fine.
             status = HealthStatus.Status.NORMAL
 
-        # 8. Save the prediction to the database
-        # The frontend dashboard reads from this HealthStatus table to turn on the LEDs.
-        HealthStatus.objects.create(equipment=eq, anomaly_score=score, status=status)
+        # 8. Save the prediction and metrics to the database
+        HealthStatus.objects.create(
+            equipment=eq, 
+            anomaly_score=score, 
+            status=status,
+            processing_latency_ms=processing_latency_ms,
+            cpu_load_percent=cpu_load_percent,
+            ram_allocation_mb=ram_allocation_mb
+        )
 
     return f"Evaluated health for {equipments.count()} active equipment."
