@@ -3,9 +3,13 @@
 # Exit if any command fails
 set -e
 
-# Ensure we are in the project root directory
+# Ensure we are in the backend directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-cd "$SCRIPT_DIR/backend"
+if [ -d "$SCRIPT_DIR/backend" ]; then
+    cd "$SCRIPT_DIR/backend"
+else
+    cd "$SCRIPT_DIR"
+fi
 
 SESSION_NAME="upemba"
 
@@ -16,12 +20,25 @@ if tmux has-session -t $SESSION_NAME 2>/dev/null; then
     exit 0
 fi
 
-echo "Starting Upemba IoT Backend Services..."
+echo "=========================================="
+echo " Starting Upemba IoT Backend Setup & Services"
+echo "=========================================="
+
+# 1. Sync dependencies
+echo "==> 1/2: Syncing dependencies with uv..."
+uv sync
+
+# 2. Apply database migrations
+echo "==> 2/2: Applying database migrations..."
+uv run python manage.py migrate
+
+echo "------------------------------------------"
+echo "Starting background services in tmux ($SESSION_NAME)..."
 
 # Create a new tmux session detached (-d)
 tmux new-session -d -s $SESSION_NAME
 
-# Pane 0 (Left): Django Web Server (API)
+# Pane 0 (Left): Django Web Server (API & WebSockets via Daphne)
 tmux send-keys -t $SESSION_NAME "source .venv/bin/activate" C-m
 tmux send-keys -t $SESSION_NAME "python manage.py runserver 0.0.0.0:8000" C-m
 
@@ -42,7 +59,7 @@ tmux send-keys -t $SESSION_NAME "python manage.py qcluster" C-m
 # Arrange the panes nicely
 tmux select-layout -t $SESSION_NAME main-vertical
 
-echo "All services started!"
+echo "All services started successfully!"
 echo "Attaching to tmux session. Press Ctrl+B, then D to detach and leave them running."
 sleep 2
 
