@@ -5,6 +5,7 @@ import random
 
 @pytest.fixture
 def normal_data():
+    random.seed(42)
     # 40 records of normal data with slight variations so variance is not zero
     return [
         {

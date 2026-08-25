@@ -36,15 +36,18 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
+    'drf_spectacular',
     'django_q',
     'django.contrib.sites',
     'users.apps.UsersConfig',
@@ -81,6 +84,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 
 # Database
@@ -157,9 +167,21 @@ Q_CLUSTER = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Upemba IoT API',
+    'DESCRIPTION': 'API for Upemba IoT monitoring and predictive maintenance',
+    'VERSION': '1.0.0',
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAdminUser'],
 }
 
 from datetime import timedelta
@@ -183,3 +205,13 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=False)
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
+
+# Predictive Maintenance & Short-Term Forecasting Settings
+PREDICTION_HISTORY_WINDOW = env.int('PREDICTION_HISTORY_WINDOW', default=40)
+PREDICTION_MIN_HISTORY = env.int('PREDICTION_MIN_HISTORY', default=10)
+PREDICTION_HORIZON_STEPS = env.int('PREDICTION_HORIZON_STEPS', default=6)
+PREDICTION_DEFAULT_INTERVAL_MINUTES = env.float('PREDICTION_DEFAULT_INTERVAL_MINUTES', default=5.0)
+PREDICTION_HOLT_ALPHA = env.float('PREDICTION_HOLT_ALPHA', default=0.3)
+PREDICTION_HOLT_BETA = env.float('PREDICTION_HOLT_BETA', default=0.1)
+
+

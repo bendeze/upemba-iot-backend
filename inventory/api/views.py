@@ -8,7 +8,7 @@ from .serializers import MaintenanceLogSerializer
 
 
 class EquipmentViewSet(viewsets.ModelViewSet):
-    queryset = Equipment.objects.all()
+    queryset = Equipment.objects.all().order_by("id")
     serializer_class = EquipmentSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ["name", "mac_address", "equipement_type", "location_notes"]

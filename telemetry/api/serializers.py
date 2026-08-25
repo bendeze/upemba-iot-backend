@@ -16,8 +16,27 @@ class HealthStatusSerializer(serializers.ModelSerializer):
             "anomaly_score",
             "status",
             "prediction_timestamp",
+            "predicted_status",
+            "predictive_anomaly_score",
+            "prediction_horizon_steps",
+            "prediction_horizon_minutes",
+            "forecasted_values",
+            "prediction_generated_at",
+            "processing_latency_ms",
+            "cpu_load_percent",
+            "ram_allocation_mb",
         ]
-        read_only_fields = ["id", "prediction_timestamp", "equipment_name"]
+        read_only_fields = [
+            "id",
+            "prediction_timestamp",
+            "equipment_name",
+            "predicted_status",
+            "predictive_anomaly_score",
+            "prediction_horizon_steps",
+            "prediction_horizon_minutes",
+            "forecasted_values",
+            "prediction_generated_at",
+        ]
 
 
 class SensorReadingSerializer(serializers.ModelSerializer):

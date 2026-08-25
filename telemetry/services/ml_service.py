@@ -69,6 +69,8 @@ class AnomalyDetector:
         # 6. Train the Model ("Learn what is normal")
         # We give the model the recent history table so it learns the normal operating patterns.
         model.fit(df_scaled)
+        self.model = model
+        self.scaler = scaler
 
         # 7. Make a Prediction on the LATEST reading
         # 'iloc[[-1]]' gets the very last row in the table (the newest sensor reading)
@@ -82,7 +84,80 @@ class AnomalyDetector:
         score = model.decision_function(latest_reading)[0]
 
         # Convert the -1/1 prediction into a simple True/False boolean
-        is_anomaly = prediction == -1
+        is_anomaly = bool(prediction == -1)
 
         # Return the raw mathematical score and the True/False flag
         return float(score), is_anomaly
+
+    def evaluate_forecast(self, forecast_records_list, model=None, scaler=None):
+        """
+        Evaluates short-term forecasted sensor readings against the fitted baseline Isolation Forest.
+        
+        Args:
+            forecast_records_list: List of forecasted dictionaries containing feature values.
+            model: Optional fitted IsolationForest model (defaults to self.model).
+            scaler: Optional fitted StandardScaler (defaults to self.scaler).
+            
+        Returns:
+            Tuple of:
+                worst_score (float): The lowest (most anomalous) anomaly score across the horizon.
+                overall_predicted_status (str): "CRITICAL", "WARNING", or "NORMAL".
+                evaluated_points (list): Detailed evaluation for each step.
+        """
+        eval_model = model if model is not None else getattr(self, "model", None)
+        eval_scaler = scaler if scaler is not None else getattr(self, "scaler", None)
+
+        if not forecast_records_list or eval_model is None or eval_scaler is None:
+            return None, None, []
+
+
+        try:
+            forecast_df = pd.DataFrame.from_records(forecast_records_list)[self.features]
+            forecast_df.fillna(0.0, inplace=True)
+            
+            # Scale future points using the historical baseline scaler
+            scaled_array = eval_scaler.transform(forecast_df)
+            scaled_points = pd.DataFrame(scaled_array, columns=self.features)
+            
+            predictions = eval_model.predict(scaled_points)
+            scores = eval_model.decision_function(scaled_points)
+            
+            evaluated_points = []
+            has_critical = False
+            has_warning = False
+            
+            for i, (pred, sc) in enumerate(zip(predictions, scores)):
+                pt_score = float(sc)
+                pt_is_anomaly = bool(pred == -1)
+                
+                if pt_score < -0.15:
+                    pt_status = "CRITICAL"
+                    has_critical = True
+                elif pt_is_anomaly or pt_score < 0.0:
+                    pt_status = "WARNING"
+                    has_warning = True
+                else:
+                    pt_status = "NORMAL"
+                    
+                evaluated_points.append({
+                    "step": i + 1,
+                    "score": round(pt_score, 4),
+                    "is_anomaly": pt_is_anomaly,
+                    "status": pt_status,
+                })
+                
+            worst_score = float(min(scores)) if len(scores) > 0 else 0.0
+            
+            if has_critical:
+                overall_status = "CRITICAL"
+            elif has_warning:
+                overall_status = "WARNING"
+            else:
+                overall_status = "NORMAL"
+                
+            return round(worst_score, 4), overall_status, evaluated_points
+
+        except Exception as e:
+            logger.error(f"Error evaluating forecasted points: {e}", exc_info=True)
+            return None, None, []
+

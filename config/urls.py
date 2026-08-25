@@ -21,6 +21,11 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+)
+
 from users.api.views import RegisterView, ActivateUserView, ResendOTPView
 
 urlpatterns = [
@@ -29,6 +34,10 @@ urlpatterns = [
     # User management (non-API)
     path('users/', include('users.urls', namespace='users')),
     
+    # API Documentation & Schema
+    path('api/schema/', SpectacularAPIView.as_view(), name='api-schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
+
     # API Routes
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

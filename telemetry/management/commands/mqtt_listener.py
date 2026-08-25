@@ -5,7 +5,10 @@ import paho.mqtt.client as mqtt
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from inventory.models import Equipment
+from telemetry.api.serializers import SensorReadingSerializer
 from telemetry.models import SensorReading
 
 logger = logging.getLogger(__name__)
@@ -77,7 +80,7 @@ class Command(BaseCommand):
             )
 
             # Create a new row in the SensorReading database table with all the measurements
-            SensorReading.objects.create(
+            reading = SensorReading.objects.create(
                 equipment=equipment,
                 temperature=temp,
                 voltage=volt,
@@ -86,10 +89,34 @@ class Command(BaseCommand):
                 vib_z=vib_z,
             )
             
+            # Broadcast real-time sensor reading to WebSocket clients
+            try:
+                channel_layer = get_channel_layer()
+                if channel_layer:
+                    reading_data = SensorReadingSerializer(reading).data
+                    # Equipment-specific group
+                    async_to_sync(channel_layer.group_send)(
+                        f"equipment_{equipment.id}",
+                        {
+                            "type": "telemetry_reading",
+                            "data": reading_data,
+                        },
+                    )
+                    # Global telemetry group
+                    async_to_sync(channel_layer.group_send)(
+                        "global_telemetry",
+                        {
+                            "type": "telemetry_reading",
+                            "data": reading_data,
+                        },
+                    )
+            except Exception as ws_err:
+                logger.warning(f"Failed to broadcast telemetry via WebSockets: {ws_err}")
+
             # Print a success message to the terminal so the user knows it's working
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Saved reading for {device_id}: Temp {temp}, Volt {volt}",
+                    f"Saved & Broadcast reading for {device_id}: Temp {temp}, Volt {volt}",
                 ),
             )
 

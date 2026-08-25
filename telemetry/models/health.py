@@ -37,8 +37,48 @@ class HealthStatus(models.Model):
         db_index=True, # Makes searching by status much faster
     )
 
-    # Automatically records the exact date and time the prediction was made.
+    # Automatically records the exact date and time the assessment was made.
     prediction_timestamp = models.DateTimeField(auto_now_add=True)
+
+    # --- Short-Term Predictive Layer Fields ---
+    # The predicted near-future health status evaluated across the forecast horizon
+    predicted_status = models.CharField(
+        _("Predicted Status"),
+        max_length=10,
+        choices=Status.choices,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    # The minimum (worst-case) anomaly score across the forecasted horizon
+    predictive_anomaly_score = models.FloatField(
+        _("Predictive Anomaly Score"),
+        null=True,
+        blank=True,
+    )
+    # The number of forecasted time steps into the near future
+    prediction_horizon_steps = models.IntegerField(
+        _("Prediction Horizon (Steps)"),
+        default=6,
+    )
+    # The calculated forecast horizon in minutes (derived from empirical sampling interval)
+    prediction_horizon_minutes = models.FloatField(
+        _("Prediction Horizon (Minutes)"),
+        null=True,
+        blank=True,
+    )
+    # Forecasted feature trajectory as a list of dicts with timestamps and forecasted values
+    forecasted_values = models.JSONField(
+        _("Forecasted Values"),
+        null=True,
+        blank=True,
+    )
+    # The timestamp when the forecast was generated
+    prediction_generated_at = models.DateTimeField(
+        _("Prediction Generated At"),
+        null=True,
+        blank=True,
+    )
 
     # --- System Performance Metrics (Section 3.5) ---
     processing_latency_ms = models.FloatField(_("Processing Latency (ms)"), null=True, blank=True)
