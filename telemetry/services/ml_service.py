@@ -125,10 +125,18 @@ class AnomalyDetector:
             evaluated_points = []
             has_critical = False
             has_warning = False
+            import math
             
             for i, (pred, sc) in enumerate(zip(predictions, scores)):
                 pt_score = float(sc)
                 pt_is_anomaly = bool(pred == -1)
+                
+                # Calibrated anomaly probability using logistic sigmoid on the decision score
+                # When score > 0 (normal): prob < 50%; when score < 0 (abnormal): prob > 50%
+                clipped_score = max(min(pt_score, 1.0), -1.0)
+                prob = 1.0 / (1.0 + math.exp(min(max(15.0 * clipped_score, -20.0), 20.0)))
+                anomaly_prob_pct = round(prob * 100.0, 1)
+                confidence_pct = round((1.0 - prob) * 100.0, 1)
                 
                 if pt_score < -0.15:
                     pt_status = "CRITICAL"
@@ -142,6 +150,9 @@ class AnomalyDetector:
                 evaluated_points.append({
                     "step": i + 1,
                     "score": round(pt_score, 4),
+                    "anomaly_score": round(pt_score, 4),
+                    "anomaly_probability": anomaly_prob_pct,
+                    "confidence": confidence_pct,
                     "is_anomaly": pt_is_anomaly,
                     "status": pt_status,
                 })

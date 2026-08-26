@@ -69,14 +69,24 @@ def evaluate_equipment_health_task():
         try:
             forecast_result = forecaster.generate_forecast(recent_list)
             if forecast_result.get("status") == "success" and forecast_result.get("forecast"):
-                worst_score, pred_stat, _ = detector.evaluate_forecast(
+                worst_score, pred_stat, eval_points = detector.evaluate_forecast(
                     forecast_result["forecast"]
                 )
                 predicted_status = pred_stat
                 predictive_anomaly_score = worst_score
                 prediction_horizon_steps = forecast_result.get("horizon_steps", horizon_steps)
                 prediction_horizon_minutes = forecast_result.get("horizon_minutes")
-                forecasted_values = forecast_result.get("forecast")
+                
+                # Enrich each forecasted point with individual probability & confidence scores
+                raw_forecast = forecast_result.get("forecast", [])
+                for idx, pt in enumerate(raw_forecast):
+                    if idx < len(eval_points):
+                        pt["anomaly_score"] = eval_points[idx].get("anomaly_score")
+                        pt["anomaly_probability"] = eval_points[idx].get("anomaly_probability")
+                        pt["confidence"] = eval_points[idx].get("confidence")
+                        pt["status"] = eval_points[idx].get("status")
+                        
+                forecasted_values = raw_forecast
                 prediction_generated_at = timezone.now()
         except Exception as pred_err:
             logger.warning(
