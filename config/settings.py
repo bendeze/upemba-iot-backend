@@ -25,12 +25,12 @@ environ.Env.read_env(BASE_DIR / '.env.local')
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)h&h$-7wy6-m1x+#*kksw4v32_#zq9151&z#alya$ox!pvnnu3'
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-)h&h$-7wy6-m1x+#*kksw4v32_#zq9151&z#alya$ox!pvnnu3')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 
 
 # Application definition
@@ -148,12 +148,13 @@ AUTH_USER_MODEL = 'users.User'
 SITE_ID = 1
 
 # CORS Settings
-CORS_ALLOW_ALL_ORIGINS = True # Change in production!
+CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=True)
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
 
 # Django Q2 Settings (using ORM broker for SQLite)
 Q_CLUSTER = {
     'name': 'upemba_q',
-    'workers': 2,
+    'workers': env.int('DJANGO_Q_WORKERS', default=2),
     'recycle': 500,
     'timeout': 60,
     'compress': True,
@@ -174,7 +175,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 50,
+    'PAGE_SIZE': env.int('REST_PAGE_SIZE', default=50),
 }
 
 SPECTACULAR_SETTINGS = {
@@ -186,16 +187,18 @@ SPECTACULAR_SETTINGS = {
 
 from datetime import timedelta
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=env.int('JWT_ACCESS_TOKEN_LIFETIME_MINUTES', default=60)),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=env.int('JWT_REFRESH_TOKEN_LIFETIME_DAYS', default=1)),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
 # MQTT Configuration
-MQTT_BROKER_HOST = "localhost"
-MQTT_BROKER_PORT = 1883
-MQTT_TELEMETRY_TOPIC = "upemba/sensors/+/telemetry"
+MQTT_BROKER_HOST = env('MQTT_BROKER_HOST', default='localhost')
+MQTT_BROKER_PORT = env.int('MQTT_BROKER_PORT', default=1883)
+MQTT_BROKER_USER = env('MQTT_BROKER_USER', default=None)
+MQTT_BROKER_PASSWORD = env('MQTT_BROKER_PASSWORD', default=None)
+MQTT_TELEMETRY_TOPIC = env('MQTT_TELEMETRY_TOPIC', default='upemba/sensors/+/telemetry')
 
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
