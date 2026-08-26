@@ -57,7 +57,7 @@ class SensorForecaster:
         # Compute median delta to be resilient against network dropouts/gaps
         median_seconds = diffs.dt.total_seconds().median()
         if median_seconds <= 0 or np.isnan(median_seconds):
-            default_min = getattr(settings, "PREDICTION_DEFAULT_INTERVAL_MINUTES", 5.0)
+            default_min = getattr(settings, "PREDICTION_DEFAULT_INTERVAL_MINUTES", 0.5)
             return timedelta(minutes=default_min), default_min
 
         interval_delta = timedelta(seconds=float(median_seconds))
