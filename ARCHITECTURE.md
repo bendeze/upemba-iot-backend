@@ -1,6 +1,6 @@
 # System Architecture & Technical Flowcharts: Upemba IoT
 
-This document provides the complete collection of formal system architecture diagrams, sequence diagrams, entity-relationship models, and decision flowcharts for the **Upemba IoT Predictive Maintenance System**. All diagrams are structured in vertical layout (`TD` / top-to-bottom) for optimal rendering in academic reports, technical documentation, and book publications.
+This document provides the complete collection of formal system architecture diagrams, sequence diagrams, entity-relationship models, and decision flowcharts for the **Upemba IoT Predictive Maintenance System**. All diagrams are structured in vertical layout (`flowchart TD` / top-to-bottom) and formatted strictly with Mermaid syntax standards for optimal rendering in academic reports, technical documentation, and book publications.
 
 ---
 
@@ -16,13 +16,13 @@ flowchart TD
 
     subgraph L2 ["2. IoT Sensing Layer (ESP32)"]
         SENS["MPU-6050 Accelerometer & Gyroscope\nVoltage Transducers & Temperature Probes"]
-        ESP["ESP32-WROOM-32 Microcontroller\n(Dual Core LX6, 240MHz, 802.11 b/g/n)"]
-        SENS -->|I2C: GPIO 21/22 & ADC| ESP
+        ESP["ESP32-WROOM-32 Microcontroller\nDual Core LX6, 240MHz, 802.11 b/g/n"]
+        SENS -->|"I2C: GPIO 21/22 & ADC"| ESP
     end
 
-    SOLAR -. Physical Vibration & Heat .-> SENS
-    PUMP -. Physical Vibration & Heat .-> SENS
-    SERVER -. Thermal & Voltage Drift .-> SENS
+    SOLAR -.->|"Physical Vibration & Heat"| SENS
+    PUMP -.->|"Physical Vibration & Heat"| SENS
+    SERVER -.->|"Thermal & Voltage Drift"| SENS
 
     subgraph L3 ["3. Network & Transport Layer"]
         WIFI["Local Wi-Fi Access Point (192.168.1.0/24)"]
@@ -31,30 +31,30 @@ flowchart TD
     end
 
     subgraph L4 ["4. Edge Gateway Layer (Raspberry Pi 4B)"]
-        MOSQ["Mosquitto MQTT Broker\nTopic: `upemba/sensors/+/telemetry`"]
-        LISTENER["Django MQTT Ingestion Daemon\n`python manage.py mqtt_listener`"]
-        Q_WORKER["Django Q2 Asynchronous Worker\n`python manage.py qcluster`"]
-        DAPHNE["Daphne ASGI Web & WebSocket Server\n(HTTP/1.1 & WSS on Port 8000)"]
+        MOSQ["Mosquitto MQTT Broker\nTopic: upemba/sensors/+/telemetry"]
+        LISTENER["Django MQTT Ingestion Daemon\npython manage.py mqtt_listener"]
+        Q_WORKER["Django Q2 Asynchronous Worker\npython manage.py qcluster"]
+        DAPHNE["Daphne ASGI Web & WebSocket Server\nHTTP/1.1 & WSS on Port 8000"]
         
         MQTT_PUB --> MOSQ
         MOSQ --> LISTENER
     end
 
     subgraph L5 ["5. Data & Analytics Layer"]
-        DB[(SQLite 3 Database: `db.sqlite3`)]
+        DB[(SQLite 3 Database: db.sqlite3)]
         CHAN["InMemoryChannelLayer (Channels)"]
         ML_ISO["Layer 1: Isolation Forest (scikit-learn)"]
         ML_HOLT["Layer 2: Holt's Linear Trend Forecaster"]
         ALERT_SVC["Alert Service (SMTP Dispatcher)"]
 
-        LISTENER -->|Persist SensorReading| DB
-        LISTENER -->|Broadcast `telemetry_reading`| CHAN
-        Q_WORKER -->|Read Rolling W=40 Readings| DB
+        LISTENER -->|"Persist SensorReading"| DB
+        LISTENER -->|"Broadcast telemetry_reading"| CHAN
+        Q_WORKER -->|"Read Rolling Window (W = 40)"| DB
         Q_WORKER --> ML_ISO
         Q_WORKER --> ML_HOLT
-        ML_ISO & ML_HOLT -->|Persist HealthStatus| DB
-        Q_WORKER -->|Critical Anomaly Detected| ALERT_SVC
-        Q_WORKER -->|Broadcast `health_update`| CHAN
+        ML_ISO & ML_HOLT -->|"Persist HealthStatus"| DB
+        Q_WORKER -->|"Critical Anomaly Detected"| ALERT_SVC
+        Q_WORKER -->|"Broadcast health_update"| CHAN
     end
 
     subgraph L6 ["6. Presentation Layer (Client Terminals)"]
@@ -62,8 +62,8 @@ flowchart TD
         UI_3D["3D Isometric Chassis Deflection Engine"]
         UI_PRED["Predictive Trend & Horizon Visualizer"]
         
-        DAPHNE <-->|REST API JSON| NEXT
-        CHAN -->|WebSocket Push Events| NEXT
+        DAPHNE <-->|"REST API JSON"| NEXT
+        CHAN -->|"WebSocket Push Events"| NEXT
         NEXT --> UI_3D
         NEXT --> UI_PRED
     end
@@ -72,9 +72,9 @@ flowchart TD
         RANGERS["Park Rangers (Field Operations)"]
         TECHS["Field Technicians & Engineers"]
         
-        ALERT_SVC -->|SMTP Email Alert (Port 25/587)| TECHS
-        NEXT -. Interactive Diagnostics & Logs .-> RANGERS
-        NEXT -. Preventive Intervention Schedule .-> TECHS
+        ALERT_SVC -->|"SMTP Email Alert - Port 25/587"| TECHS
+        NEXT -.->|"Interactive Diagnostics & Logs"| RANGERS
+        NEXT -.->|"Preventive Intervention Schedule"| TECHS
     end
 ```
 
@@ -90,28 +90,28 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    subgraph PhysicalMachinery ["Monitored Industrial Asset"]
+    subgraph PhysicalMachinery ["1. Industrial Asset"]
         HOUSING["Equipment Housing / Inverter Casing"]
         POWER_RAIL["DC/AC Power Terminals"]
     end
 
-    subgraph Transducers ["Sensor Transducer Modules"]
-        MPU["MPU-6050 Sensor Board\n- Micro-Electro-Mechanical (MEMS) 3-Axis Accel\n- 3-Axis Gyroscope\n- Internal Temperature Sensor"]
-        VOLT_MOD["Voltage Divider Transducer\n(0-25V DC Input -> 0-3.3V Output)"]
+    subgraph Transducers ["2. Sensor Transducers"]
+        MPU["MPU-6050 Sensor Board\n- 3-Axis Accelerometer (X, Y, Z)\n- 3-Axis Gyroscope\n- Internal Temperature Sensor"]
+        VOLT_MOD["Voltage Divider Module\n0-25V DC Input -> 0-3.3V Output"]
     end
 
-    HOUSING ===|Rigid Mechanical Coupling / Epoxy| MPU
-    POWER_RAIL ===|Galvanic / Resistor Isolation| VOLT_MOD
+    HOUSING -->|"Rigid Mechanical Coupling / Epoxy"| MPU
+    POWER_RAIL -->|"Galvanic / Resistor Divider"| VOLT_MOD
 
-    subgraph MicrocontrollerUnit ["ESP32-WROOM-32 Microcontroller Node"]
+    subgraph MicrocontrollerUnit ["3. ESP32-WROOM-32 Microcontroller Node"]
         PIN_I2C["I2C Hardware Controller\nGPIO 21 (SDA) | GPIO 22 (SCL)\n3.3V Logic Level, 400 kHz Fast-Mode"]
         PIN_ADC["12-bit SAR ADC Controller\nAnalog Input: GPIO 34"]
         CPU["Dual-Core 32-bit Xtensa LX6 CPU\nClock Frequency: 240 MHz"]
         BUFFER["In-Memory JSON Serialization Buffer"]
         WIFI_RADIO["802.11 b/g/n Wi-Fi Transceiver"]
 
-        MPU -->|I2C Bus Protocol| PIN_I2C
-        VOLT_MOD -->|Analog Voltage Level| PIN_ADC
+        MPU -->|"I2C Bus Protocol"| PIN_I2C
+        VOLT_MOD -->|"Analog Voltage Level"| PIN_ADC
         PIN_I2C --> CPU
         PIN_ADC --> CPU
         CPU --> BUFFER
@@ -119,17 +119,17 @@ flowchart TD
         CPU --> WIFI_RADIO
     end
 
-    subgraph PowerSource ["Power Management"]
+    subgraph PowerSource ["4. Power Supply"]
         PWR_OPT1["5V Micro-USB / USB-C Direct"]
         PWR_OPT2["5V DC-DC Buck Converter from Solar Battery"]
-        REG["On-board 3.3V Low-Dropout (LDO) Regulator"]
+        REG["On-board 3.3V Low-Dropout Regulator"]
         
         PWR_OPT1 --> REG
         PWR_OPT2 --> REG
         REG --> MicrocontrollerUnit
     end
 
-    WIFI_RADIO -->|MQTT Publish: `upemba/sensors/<device_id>/telemetry`| GATEWAY["Raspberry Pi Edge Gateway"]
+    WIFI_RADIO -->|"MQTT Publish: upemba/sensors/device_id/telemetry"| GATEWAY["Raspberry Pi Edge Gateway"]
 ```
 
 <div align="center">
@@ -144,48 +144,48 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    subgraph HardwareHost ["Raspberry Pi 4 Model B (4GB LPDDR4, ARM Cortex-A72 @ 1.5GHz)"]
+    subgraph HardwareHost ["Raspberry Pi 4 Model B (4GB RAM, ARM Cortex-A72 @ 1.5GHz)"]
         
         subgraph BrokerProcess ["1. Message Broker (Daemon Service)"]
-            MOSQUITTO["Eclipse Mosquitto MQTT Broker\n- TCP Port: 1883 (Listening on 0.0.0.0)\n- Protocol: MQTT v3.1.1 / v5.0\n- QoS: 0 (Low Latency / Edge Tuned)"]
+            MOSQUITTO["Eclipse Mosquitto MQTT Broker\n- TCP Port: 1883 (Listening on 0.0.0.0)\n- Protocol: MQTT v3.1.1 / v5.0\n- QoS: 0 (Edge-Tuned Low Latency)"]
         end
 
         subgraph TmuxSession ["2. Process Orchestration (Tmux Session: 'upemba')"]
             
             subgraph Pane0 ["Pane 0: Application & WebSocket Server"]
-                DAPHNE_SRV["Daphne ASGI Web Server\n`python manage.py runserver 0.0.0.0:8000`\n- HTTP/1.1 REST API\n- Django Channels WebSockets"]
+                DAPHNE_SRV["Daphne ASGI Web Server\npython manage.py runserver 0.0.0.0:8000\n- HTTP/1.1 REST API\n- Django Channels WebSockets"]
             end
 
             subgraph Pane1 ["Pane 1: Telemetry Ingestion Daemon"]
-                MQTT_LISTENER["MQTT Ingestion Command\n`python manage.py mqtt_listener`\n- Paho-MQTT Client Listener\n- Non-blocking Ingestion Loop"]
+                MQTT_LISTENER["MQTT Ingestion Command\npython manage.py mqtt_listener\n- Paho-MQTT Client Listener\n- Non-blocking Ingestion Loop"]
             end
 
             subgraph Pane2 ["Pane 2: Background Task Worker"]
-                QCLUSTER["Django Q2 Worker Cluster\n`python manage.py qcluster`\n- Scheduled Periodic Task Runner\n- Dual-Layer ML Inference Worker"]
+                QCLUSTER["Django Q2 Worker Cluster\npython manage.py qcluster\n- Scheduled Periodic Task Runner\n- Dual-Layer ML Inference Worker"]
             end
         end
 
         subgraph LocalStorage ["3. Embedded Persistence & IPC"]
-            SQLITE_DB[(SQLite 3 Database: `db.sqlite3`\n- SensorReading\n- HealthStatus\n- Equipment\n- MaintenanceLog\n- User)]
+            SQLITE_DB[(SQLite 3 Database: db.sqlite3\n- SensorReading\n- HealthStatus\n- Equipment\n- MaintenanceLog\n- User)]
             CHANNEL_LAYER["InMemoryChannelLayer\n- Real-Time WebSocket Group IPC"]
         end
 
         subgraph LocalMailRelay ["4. Alert Dispatch"]
-            SMTP_RELAY["Local / Uplink SMTP Relay Service\n(Port 25 / 587)"]
+            SMTP_RELAY["Local / Uplink SMTP Relay Service\nPort 25 / 587"]
         end
     end
 
-    MOSQUITTO -->|Deliver MQTT Messages| MQTT_LISTENER
-    MQTT_LISTENER -->|ORM Insert: SensorReading| SQLITE_DB
-    MQTT_LISTENER -->|Broadcast: `telemetry_reading`| CHANNEL_LAYER
+    MOSQUITTO -->|"Deliver MQTT Messages"| MQTT_LISTENER
+    MQTT_LISTENER -->|"ORM Insert: SensorReading"| SQLITE_DB
+    MQTT_LISTENER -->|"Broadcast telemetry_reading"| CHANNEL_LAYER
 
-    QCLUSTER -->|Query W=40 Readings| SQLITE_DB
-    QCLUSTER -->|ORM Insert: HealthStatus| SQLITE_DB
-    QCLUSTER -->|Trigger Email on Critical| SMTP_RELAY
-    QCLUSTER -->|Broadcast: `health_update`| CHANNEL_LAYER
+    QCLUSTER -->|"Query W=40 Readings"| SQLITE_DB
+    QCLUSTER -->|"ORM Insert: HealthStatus"| SQLITE_DB
+    QCLUSTER -->|"Trigger Email on Critical"| SMTP_RELAY
+    QCLUSTER -->|"Broadcast health_update"| CHANNEL_LAYER
 
-    DAPHNE_SRV <-->|Read / Write State| SQLITE_DB
-    DAPHNE_SRV <-->|Subscribe & Stream Events| CHANNEL_LAYER
+    DAPHNE_SRV <-->|"Read / Write State"| SQLITE_DB
+    DAPHNE_SRV <-->|"Subscribe & Stream Events"| CHANNEL_LAYER
 ```
 
 <div align="center">
@@ -200,38 +200,38 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    subgraph Publishers ["MQTT Publishers (Field Sensor Nodes)"]
-        NODE1["ESP32 Node 1\n`device_id: EQUIP-INV-001`\nTopic: `upemba/sensors/EQUIP-INV-001/telemetry`"]
-        NODE2["ESP32 Node 2\n`device_id: EQUIP-MOT-002`\nTopic: `upemba/sensors/EQUIP-MOT-002/telemetry`"]
-        NODEN["ESP32 Node N\n`device_id: EQUIP-SRV-003`\nTopic: `upemba/sensors/EQUIP-SRV-003/telemetry`"]
+    subgraph Publishers ["1. MQTT Publishers (Field Sensor Nodes)"]
+        NODE1["ESP32 Node 1 (Solar Inverter)\ndevice_id: EQUIP-INV-001\nTopic: upemba/sensors/EQUIP-INV-001/telemetry"]
+        NODE2["ESP32 Node 2 (Water Pump)\ndevice_id: EQUIP-MOT-002\nTopic: upemba/sensors/EQUIP-MOT-002/telemetry"]
+        NODEN["ESP32 Node N (Server Rack)\ndevice_id: EQUIP-SRV-003\nTopic: upemba/sensors/EQUIP-SRV-003/telemetry"]
     end
 
-    subgraph BrokerCore ["Mosquitto MQTT Broker (TCP Port 1883)"]
-        TOPIC_ROUTER{"Topic Namespace Router\nMatches against wildcard subscriptions"}
+    subgraph BrokerCore ["2. Mosquitto MQTT Broker (TCP Port 1883)"]
+        TOPIC_ROUTER{"Topic Namespace Router\nMatches wildcard subscriptions"}
     end
 
-    NODE1 -->|Publish Payload (QoS 0)| TOPIC_ROUTER
-    NODE2 -->|Publish Payload (QoS 0)| TOPIC_ROUTER
-    NODEN -->|Publish Payload (QoS 0)| TOPIC_ROUTER
+    NODE1 -->|"Publish Payload - QoS 0"| TOPIC_ROUTER
+    NODE2 -->|"Publish Payload - QoS 0"| TOPIC_ROUTER
+    NODEN -->|"Publish Payload - QoS 0"| TOPIC_ROUTER
 
-    subgraph SubscriberBackend ["MQTT Subscriber (Django Ingestion Engine)"]
-        SUB_CLIENT["Paho-MQTT v2 Client (`django_mqtt_listener`)"]
-        SUB_TOPIC["Subscription: `upemba/sensors/+/telemetry`\n('+ ' Single-Level Wildcard matches all device IDs)"]
-        CALLBACK["`on_message(client, userdata, msg)` Callback Handler"]
+    subgraph SubscriberBackend ["3. MQTT Subscriber (Django Ingestion Engine)"]
+        SUB_CLIENT["Paho-MQTT v2 Client: django_mqtt_listener"]
+        SUB_TOPIC["Subscription: upemba/sensors/+/telemetry\n(Wildcard matches all device IDs)"]
+        CALLBACK["on_message Callback Handler"]
         
         SUB_CLIENT --> SUB_TOPIC
         SUB_TOPIC --> CALLBACK
     end
 
-    TOPIC_ROUTER -->|Forward Matching Packets| SUB_CLIENT
+    TOPIC_ROUTER -->|"Forward Matching Messages"| SUB_CLIENT
 
-    subgraph IngestionPipeline ["Data Ingestion Actions"]
+    subgraph IngestionPipeline ["4. Data Ingestion Pipeline"]
         DECODE["Decode UTF-8 Byte Stream"]
         PARSE_JSON["Parse JSON Structure"]
         VALIDATE["Validate Required Keys:\n[device_id, temp, volt, vib.x, vib.y, vib.z]"]
-        GET_OR_CREATE["Get or Auto-Provision `Equipment` in Registry"]
-        INSERT_DB["INSERT into `telemetry_sensorreading`"]
-        WS_FORWARD["Dispatch `telemetry_reading` to Django Channels"]
+        GET_OR_CREATE["Get or Auto-Provision Equipment in Registry"]
+        INSERT_DB["INSERT into telemetry_sensorreading"]
+        WS_FORWARD["Dispatch telemetry_reading to Django Channels"]
 
         CALLBACK --> DECODE --> PARSE_JSON --> VALIDATE --> GET_OR_CREATE --> INSERT_DB --> WS_FORWARD
     end
@@ -249,27 +249,27 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["1. Physical Sensor Sampling\n(MPU-6050 Accelerometer & Voltage/Thermal Probes)"] --> B["2. Microcontroller Data Acquisition (ESP32)\n(I2C Fast-Mode & 12-bit ADC Reading)"]
-    B --> C["3. JSON Payload Serialization\n(`{ device_id, data: { temp, volt, vib: {x,y,z} } }`)"]
-    C --> D["4. MQTT Message Publication\n(Topic: `upemba/sensors/<device_id>/telemetry` via TCP:1883)"]
-    D --> E["5. Mosquitto Broker Ingestion & Distribution\n(Forwarded to Wildcard Subscriber `upemba/sensors/+/telemetry`)"]
-    E --> F["6. Backend Ingestion & Schema Validation\n(`mqtt_listener.py`: Null check, type enforcement)"]
-    F --> G["7. Relational Persistence in SQLite Database\n(Created row in `telemetry_sensorreading` with timestamp index)"]
+    A["1. Physical Sensor Sampling\nMPU-6050 Accelerometer & Voltage/Thermal Probes"] --> B["2. Microcontroller Data Acquisition (ESP32)\nI2C Fast-Mode & 12-bit ADC Reading"]
+    B --> C["3. JSON Payload Serialization\ndevice_id and nested telemetry dictionary"]
+    C --> D["4. MQTT Message Publication\nTopic: upemba/sensors/device_id/telemetry via TCP:1883"]
+    D --> E["5. Mosquitto Broker Ingestion & Routing\nForwarded to Wildcard Subscriber upemba/sensors/+/telemetry"]
+    E --> F["6. Backend Ingestion & Schema Validation\nmqtt_listener.py: Null check and type enforcement"]
+    F --> G["7. Relational Persistence in SQLite Database\nCreated row in telemetry_sensorreading"]
     
-    G --> H["8. Real-Time WebSocket Streaming\n(Broadcast via `InMemoryChannelLayer` to `global_telemetry` group)"]
-    H --> I["9. Instant Live Dashboard Update\n(Next.js TanStack Query optimistic cache mutation & 3D mesh rendering)"]
+    G --> H["8. Real-Time WebSocket Streaming\nBroadcast via InMemoryChannelLayer to global_telemetry group"]
+    H --> I["9. Instant Live Dashboard Update\nTanStack Query cache mutation & 3D mesh rendering"]
     
-    G --> J["10. Scheduled Machine Learning Pipeline (~60s Task)\n(`evaluate_equipment_health_task` queries rolling W=40 window)"]
-    J --> K["11. Data Preprocessing & Scaling\n(Linear interpolation + forward/backward fill + StandardScaler)"]
-    K --> L["12. Layer 1: Real-Time Anomaly Detection\n(Isolation Forest computes current score & binary anomaly flag)"]
-    K --> M["13. Layer 2: Short-Term Predictive Forecasting\n(Holt's Linear Trend extrapolates H=6 future multi-feature vectors)"]
-    L & M --> N["14. Health Assessment & Horizon Evaluation\n(Evaluates projected points against fitted IF model; derives worst score)"]
-    N --> O["15. Persistence of Health Status & Performance Metrics\n(Saved to `telemetry_healthstatus` with CPU/RAM/latency profiling)"]
+    G --> J["10. Scheduled Machine Learning Pipeline (~60s Task)\nevaluate_equipment_health_task queries rolling W=40 window"]
+    J --> K["11. Data Preprocessing & Normalization\nLinear interpolation + forward/backward fill + StandardScaler"]
+    K --> L["12. Layer 1: Real-Time Anomaly Detection\nIsolation Forest computes current score & binary anomaly flag"]
+    K --> M["13. Layer 2: Short-Term Predictive Forecasting\nHolt's Linear Trend extrapolates H=6 future multi-feature vectors"]
+    L & M --> N["14. Health Assessment & Horizon Evaluation\nEvaluates projected points against fitted model; derives worst score"]
+    N --> O["15. Persistence of Health Status & Performance Metrics\nSaved to telemetry_healthstatus with CPU/RAM/latency profiling"]
     
-    O --> P["16. WebSocket Broadcast of Health & Alert Updates\n(Pushed to Next.js clients for status badges and predictive curves)"]
+    O --> P["16. WebSocket Broadcast of Health & Alert Updates\nPushed to Next.js clients for status badges and predictive curves"]
     
-    O --> Q{"17. Anomaly Score < -0.15\n(CRITICAL Fault)?"}
-    Q -- Yes --> R["18. Automated SMTP Email Alert Dispatch\n(`AlertService` sends rich HTML email to Technicians & Admins)"]
+    O --> Q{"17. Anomaly Score < -0.15\n(CRITICAL Alert)?"}
+    Q -- Yes --> R["18. Automated SMTP Email Alert Dispatch\nAlertService sends rich HTML email to Technicians & Admins"]
     Q -- No --> S["19. Normal Continuous Monitoring Continues"]
     R --> T["20. Physical SOP Inspection & Maintenance Intervention"]
 ```
@@ -286,39 +286,39 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    subgraph ConfigLayer ["Master Django Configuration (`config`)"]
-        SETTINGS["`settings.py` (Environ injection, Q_CLUSTER, SimpleJWT, Database)"]
-        MASTER_URLS["`urls.py` (Route Dispatcher)"]
-        API_ROUTER["`api_router.py` (DRF DefaultRouter / SimpleRouter)"]
-        ASGI_APP["`asgi.py` (ProtocolTypeRouter: HTTP + WebSockets)"]
+    subgraph ConfigLayer ["Master Django Configuration (config)"]
+        SETTINGS["settings.py (Environ injection, Q_CLUSTER, SimpleJWT, Database)"]
+        MASTER_URLS["urls.py (Route Dispatcher)"]
+        API_ROUTER["api_router.py (DRF Router)"]
+        ASGI_APP["asgi.py (ProtocolTypeRouter: HTTP + WebSockets)"]
     end
 
-    subgraph UsersDomain ["`users` Application Domain"]
-        USER_MOD["Model: `User` (AbstractUser + Role: ADMIN / TECHNICIAN / RANGER)"]
-        USER_VIEWS["Views: `UserViewSet`, `RegisterView`, `ActivateUserView`, `ResendOTPView`"]
-        USER_SERIAL["Serializers: `UserSerializer`, `RegisterSerializer`"]
+    subgraph UsersDomain ["users Application Domain"]
+        USER_MOD["Model: User (AbstractUser + Role: ADMIN / TECHNICIAN / RANGER)"]
+        USER_VIEWS["Views: UserViewSet, RegisterView, ActivateUserView, ResendOTPView"]
+        USER_SERIAL["Serializers: UserSerializer, RegisterSerializer"]
     end
 
-    subgraph InventoryDomain ["`inventory` Application Domain"]
-        EQ_MOD["Model: `Equipment` (UUID PK, Name, Type, MAC Address, Active Flag)"]
-        LOG_MOD["Model: `MaintenanceLog` (Equipment FK, Author FK, Description, Action)"]
-        INV_VIEWS["Views: `EquipmentViewSet`, `MaintenanceLogViewSet`"]
-        INV_SERIAL["Serializers: `EquipmentSerializer`, `MaintenanceLogSerializer`"]
+    subgraph InventoryDomain ["inventory Application Domain"]
+        EQ_MOD["Model: Equipment (UUID PK, Name, Type, MAC Address, Active Flag)"]
+        LOG_MOD["Model: MaintenanceLog (Equipment FK, Author FK, Description, Action)"]
+        INV_VIEWS["Views: EquipmentViewSet, MaintenanceLogViewSet"]
+        INV_SERIAL["Serializers: EquipmentSerializer, MaintenanceLogSerializer"]
     end
 
-    subgraph TelemetryDomain ["`telemetry` Application Domain"]
-        READ_MOD["Model: `SensorReading` (Equipment FK, Temp, Volt, Vib X/Y/Z, Timestamp)"]
-        HEALTH_MOD["Model: `HealthStatus` (Current & Predictive Scores, Horizon JSON, Latency, CPU/RAM)"]
-        TEL_VIEWS["Views: `HealthStatusViewSet`, `SensorReadingViewSet`"]
-        TEL_SERIAL["Serializers: `HealthStatusSerializer`, `SensorReadingSerializer`"]
-        WS_CONSUMER["Consumer: `TelemetryConsumer` (AsyncJsonWebsocketConsumer)"]
+    subgraph TelemetryDomain ["telemetry Application Domain"]
+        READ_MOD["Model: SensorReading (Equipment FK, Temp, Volt, Vib X/Y/Z, Timestamp)"]
+        HEALTH_MOD["Model: HealthStatus (Current & Predictive Scores, Horizon JSON, Latency, CPU/RAM)"]
+        TEL_VIEWS["Views: HealthStatusViewSet, SensorReadingViewSet"]
+        TEL_SERIAL["Serializers: HealthStatusSerializer, SensorReadingSerializer"]
+        WS_CONSUMER["Consumer: TelemetryConsumer (AsyncJsonWebsocketConsumer)"]
         
         subgraph TelemetryServices ["Domain Services & Workers"]
-            TASK_EVAL["Task: `evaluate_equipment_health_task()`"]
-            CMD_MQTT["Command: `mqtt_listener.py`"]
-            SVC_ML["Service: `AnomalyDetector` (Isolation Forest)"]
-            SVC_PRED["Service: `SensorForecaster` (Holt's Linear Trend)"]
-            SVC_ALERT["Service: `AlertService` (SMTP Dispatcher)"]
+            TASK_EVAL["Task: evaluate_equipment_health_task()"]
+            CMD_MQTT["Command: mqtt_listener.py"]
+            SVC_ML["Service: AnomalyDetector (Isolation Forest)"]
+            SVC_PRED["Service: SensorForecaster (Holt's Linear Trend)"]
+            SVC_ALERT["Service: AlertService (SMTP Dispatcher)"]
         end
     end
 
@@ -353,47 +353,47 @@ flowchart TD
 flowchart TD
     subgraph ClientBrowser ["Next.js Frontend Client (Port 3000)"]
         USER_UI["User Interface Components\n(Dashboard, Predictions, Logs, Equipment, Settings)"]
-        QUERY_CACHE["TanStack React Query Cache Layer\n(Keyed Queries: `equipment`, `sensor-readings`, `health-status`)"]
-        AXIOS_CLIENT["Axios HTTP Client (`src/lib/api/`)"]
-        AUTH_STORE["JWT Cookie Storage (`js-cookie`)"]
+        QUERY_CACHE["TanStack React Query Cache Layer\nKeyed Queries: equipment, sensor-readings, health-status"]
+        AXIOS_CLIENT["Axios HTTP Client (src/lib/api/)"]
+        AUTH_STORE["JWT Cookie Storage (js-cookie)"]
 
         USER_UI <--> QUERY_CACHE
         QUERY_CACHE <--> AXIOS_CLIENT
-        AUTH_STORE -->|Inject `Authorization: Bearer <token>`| AXIOS_CLIENT
+        AUTH_STORE -->|"Inject Authorization: Bearer token"| AXIOS_CLIENT
     end
 
     subgraph APIRoutes ["Django REST Framework API Gateway (Port 8000)"]
         
         subgraph AuthEndpoints ["Authentication & Account Endpoints"]
-            EP_TOKEN["`POST /api/token/` (Obtain Access & Refresh JWT)"]
-            EP_REFRESH["`POST /api/token/refresh/` (Rotate Access Token)"]
-            EP_REG["`POST /api/register/` (Create User Account)"]
-            EP_ACT["`POST /api/activate/` (Verify Email OTP)"]
-            EP_RESEND["`POST /api/resend-otp/` (Generate Fresh OTP)"]
-            EP_ME["`GET / PATCH /api/users/me/` (Profile Management)"]
-            EP_PW["`POST /api/users/change-password/` (Password Update)"]
+            EP_TOKEN["POST /api/token/ (Obtain Access & Refresh JWT)"]
+            EP_REFRESH["POST /api/token/refresh/ (Rotate Access Token)"]
+            EP_REG["POST /api/register/ (Create User Account)"]
+            EP_ACT["POST /api/activate/ (Verify Email OTP)"]
+            EP_RESEND["POST /api/resend-otp/ (Generate Fresh OTP)"]
+            EP_ME["GET / PATCH /api/users/me/ (Profile Management)"]
+            EP_PW["POST /api/users/change-password/ (Password Update)"]
         end
 
         subgraph CoreDomainEndpoints ["Domain Resource Endpoints"]
-            EP_EQUIP["`GET / POST /api/equipment/` (Equipment Registry & Search)"]
-            EP_READINGS["`GET /api/sensor-readings/` (Filtered Telemetry Time-Series)"]
-            EP_HEALTH["`GET /api/health-status/` (Current Health & Predictive Horizon)"]
-            EP_LOGS["`GET / POST /api/maintenance-logs/` (Maintenance Logbook)"]
+            EP_EQUIP["GET / POST /api/equipment/ (Equipment Registry & Search)"]
+            EP_READINGS["GET /api/sensor-readings/ (Filtered Telemetry Time-Series)"]
+            EP_HEALTH["GET /api/health-status/ (Current Health & Predictive Horizon)"]
+            EP_LOGS["GET / POST /api/maintenance-logs/ (Maintenance Logbook)"]
         end
 
         subgraph DocsEndpoints ["Documentation Endpoints"]
-            EP_SCHEMA["`GET /api/schema/` (OpenAPI 3.0 YAML/JSON)"]
-            EP_SWAGGER["`GET /api/docs/` (Interactive Swagger UI)"]
+            EP_SCHEMA["GET /api/schema/ (OpenAPI 3.0 YAML/JSON)"]
+            EP_SWAGGER["GET /api/docs/ (Interactive Swagger UI)"]
         end
     end
 
     subgraph DatabaseLayer ["Relational Persistence"]
-        DB[(SQLite 3 Database: `db.sqlite3`)]
+        DB[(SQLite 3 Database: db.sqlite3)]
     end
 
-    AXIOS_CLIENT ===|HTTP Request + JWT| AuthEndpoints
-    AXIOS_CLIENT ===|HTTP Request + JWT| CoreDomainEndpoints
-    AXIOS_CLIENT ===|HTTP Request| DocsEndpoints
+    AXIOS_CLIENT -->|"HTTP Request + JWT"| AuthEndpoints
+    AXIOS_CLIENT -->|"HTTP Request + JWT"| CoreDomainEndpoints
+    AXIOS_CLIENT -->|"HTTP Request"| DocsEndpoints
 
     AuthEndpoints <--> DatabaseLayer
     CoreDomainEndpoints <--> DatabaseLayer
@@ -489,7 +489,7 @@ erDiagram
 ```mermaid
 flowchart TD
     subgraph IngestionWindow ["1. Ingestion & Historical Windowing"]
-        QUERY["Query last W=40 chronological records from `SensorReading`"]
+        QUERY["Query last W=40 chronological records from SensorReading"]
         CHECK_LEN{"Dataset >= 10 points?"}
         QUERY --> CHECK_LEN
         CHECK_LEN -- No --> SKIP["Skip Evaluation (Insufficient baseline)"]
@@ -497,40 +497,40 @@ flowchart TD
 
     subgraph DataPrep ["2. Preprocessing & Standardization"]
         EXTRACT["Extract 5 Continuous Features:\n[temperature, voltage, vib_x, vib_y, vib_z]"]
-        INTERP["Linear Interpolation (`df.interpolate(method='linear')`)\nHandles sensor dropouts"]
-        FILL["Forward & Backward Fill (`df.ffill()`, `df.bfill()`)"]
-        SCALER["StandardScaler Normalization ($z = \frac{x - \mu}{\sigma}$)\nZero-mean & unit-variance scaling"]
+        INTERP["Linear Interpolation (df.interpolate)\nHandles missing packets"]
+        FILL["Forward & Backward Fill (df.ffill, df.bfill)"]
+        SCALER["StandardScaler Normalization (z = (x - mean) / std)\nZero-mean & unit-variance scaling"]
 
         CHECK_LEN -- Yes --> EXTRACT --> INTERP --> FILL --> SCALER
     end
 
     subgraph Layer1Pipeline ["3. Layer 1: Real-Time Anomaly Detection"]
-        FIT_IF["Fit Isolation Forest on Scaled Window\n`IsolationForest(n_estimators=15, contamination=0.05)`"]
-        PRED_NOW["Evaluate Present Reading ($t=0$)\n`decision_function(latest_reading)`"]
-        SCORE_NOW["Compute Real-Time Decision Score $S_{t=0}$\nand Boolean `is_anomaly` Flag"]
+        FIT_IF["Fit Isolation Forest on Scaled Window\nIsolationForest(n_estimators=15, contamination=0.05)"]
+        PRED_NOW["Evaluate Present Reading (t = 0)\ndecision_function(latest_reading)"]
+        SCORE_NOW["Compute Real-Time Decision Score\nand Boolean is_anomaly Flag"]
 
         SCALER --> FIT_IF --> PRED_NOW --> SCORE_NOW
     end
 
     subgraph Layer2Pipeline ["4. Layer 2: Short-Term Predictive Forecasting"]
-        HOLT_FIT["Holt's Linear Exponential Smoothing Model\n$\ell_t = \alpha y_t + (1-\alpha)(\ell_{t-1} + b_{t-1})$\n$b_t = \beta(\ell_t - \ell_{t-1}) + (1-\beta)b_{t-1}$"]
-        PROJ_STEPS["Extrapolate $H=6$ Forward Steps\n$\hat{y}_{t+k} = \ell_t + k \cdot b_t$"]
-        EMPIRICAL_DT["Calculate Empirical Sampling Interval ($\Delta t$)\n$\Delta t = \text{median}(\text{timestamp}_i - \text{timestamp}_{i-1})$\n$\text{Horizon (Minutes)} = H \times \Delta t_{\text{min}}$"]
-        SCALE_FUT["Transform Projected Vectors using Baseline Scaler\n`scaler.transform(forecast_df)`"]
-        EVAL_FUT["Evaluate Horizon Points against Fitted Isolation Forest\n`model.decision_function(scaled_points)`"]
-        SIGMOID_CALIB["Calibrate Probabilities via Sigmoid:\n$P(\text{anomaly}) = \frac{1}{1 + e^{15 \cdot S}}$\n$\text{Confidence} = 100 \times (1 - P)$"]
+        HOLT_FIT["Holt's Linear Smoothing Model:\nLevel = alpha * y_t + (1-alpha)*(Level + Trend)\nTrend = beta * (Level_diff) + (1-beta)*Trend"]
+        PROJ_STEPS["Extrapolate H=6 Forward Steps\nForecast = Level + step * Trend"]
+        EMPIRICAL_DT["Calculate Empirical Sampling Interval (dt)\ndt = median(timestamps differences)\nHorizon (Minutes) = H * dt_minutes"]
+        SCALE_FUT["Transform Projected Vectors using Baseline Scaler\nscaler.transform(forecast_df)"]
+        EVAL_FUT["Evaluate Horizon Points against Fitted Isolation Forest\nmodel.decision_function(scaled_points)"]
+        SIGMOID_CALIB["Calibrate Probabilities via Sigmoid:\nProb = 1 / (1 + exp(15 * Score))\nConfidence = 100 * (1 - Prob)"]
 
         FILL --> HOLT_FIT --> PROJ_STEPS --> SCALE_FUT
         FILL --> EMPIRICAL_DT
-        FIT_IF -. Fitted Model .-> EVAL_FUT
-        SCALER -. Fitted Scaler .-> SCALE_FUT
+        FIT_IF -.->|"Fitted Model"| EVAL_FUT
+        SCALER -.->|"Fitted Scaler"| SCALE_FUT
         SCALE_FUT --> EVAL_FUT --> SIGMOID_CALIB
     end
 
     subgraph SynthesisLayer ["5. Classification & Database Persistence"]
         CLASSIFY["Synthesize Health Classes:\n- Score < -0.15 -> CRITICAL\n- Score < 0.0 -> WARNING\n- Score >= 0.0 -> NORMAL"]
-        PROFILE["Capture System Metrics via `psutil`:\n- Latency (ms)\n- CPU Load (%)\n- RAM Allocation (MB)"]
-        PERSIST_DB["INSERT into `telemetry_healthstatus`"]
+        PROFILE["Capture System Metrics via psutil:\n- Latency (ms)\n- CPU Load (%)\n- RAM Allocation (MB)"]
+        PERSIST_DB["INSERT into telemetry_healthstatus"]
 
         SCORE_NOW --> CLASSIFY
         EVAL_FUT --> CLASSIFY
@@ -562,14 +562,14 @@ flowchart TD
     CHECK_COUNT -- No --> LOG_SKIP["Log Warning: Insufficient Baseline Data"] --> NEXT_NODE["Move to Next Equipment"]
     
     CHECK_COUNT -- Yes --> PREPROC["Clean, Interpolate & Standardize Features"]
-    PREPROC --> FIT_ML["Fit Isolation Forest & Predict Present Score $S_{t=0}$"]
-    PREPROC --> RUN_FORECAST["Run Holt's Forecaster ($H=6$ Steps Ahead)"]
+    PREPROC --> FIT_ML["Fit Isolation Forest & Predict Present Score at t=0"]
+    PREPROC --> RUN_FORECAST["Run Holt's Forecaster (H=6 Steps Ahead)"]
     
     FIT_ML & RUN_FORECAST --> EVAL_FUTURE["Evaluate Forecast Horizon against Fitted Model"]
     
-    EVAL_FUTURE --> CHECK_CURRENT_CRIT{"$S_{t=0} < -0.15$?"}
+    EVAL_FUTURE --> CHECK_CURRENT_CRIT{"Current Score < -0.15?"}
     CHECK_CURRENT_CRIT -- Yes --> SET_CURR_CRIT["Status = CRITICAL\nTrigger Immediate Email Alert"]
-    CHECK_CURRENT_CRIT -- No --> CHECK_CURRENT_WARN{"$S_{t=0} < 0.0$ OR\nis_anomaly == True?"}
+    CHECK_CURRENT_CRIT -- No --> CHECK_CURRENT_WARN{"Current Score < 0.0 OR\nis_anomaly is True?"}
     CHECK_CURRENT_WARN -- Yes --> SET_CURR_WARN["Status = WARNING"]
     CHECK_CURRENT_WARN -- No --> SET_CURR_NORM["Status = NORMAL"]
 
@@ -582,11 +582,11 @@ flowchart TD
     CHECK_PRED_WARN -- Yes --> SET_PRED_WARN["Predicted Status = WARNING"]
     CHECK_PRED_WARN -- No --> SET_PRED_NORM["Predicted Status = NORMAL"]
 
-    SET_PRED_CRIT --> SAVE_HEALTH["Create `HealthStatus` Record in SQLite Database"]
+    SET_PRED_CRIT --> SAVE_HEALTH["Create HealthStatus Record in SQLite Database"]
     SET_PRED_WARN --> SAVE_HEALTH
     SET_PRED_NORM --> SAVE_HEALTH
 
-    SAVE_HEALTH --> WS_PUSH["Broadcast `health_update` via Channels WebSockets"]
+    SAVE_HEALTH --> WS_PUSH["Broadcast health_update via Channels WebSockets"]
     WS_PUSH --> NEXT_NODE
     NEXT_NODE --> LOOP_START
 ```
@@ -610,11 +610,11 @@ flowchart TD
     end
 
     subgraph NotificationDispatch ["2. Alert Notification Dispatch"]
-        ALERT_SERVICE["`AlertService.trigger_critical_alert()`"]
+        ALERT_SERVICE["AlertService.trigger_critical_alert()"]
         QUERY_RECIPIENTS["Query Active Users with Role in [ADMIN, TECHNICIAN] and valid Email"]
-        HTML_TEMPLATE["Render `telemetry/email/critical_alert.html`\nwith Equipment Name, Timestamp, Anomaly Score"]
-        SEND_EMAIL["Dispatch via Django `send_mail()` (SMTP Relay)"]
-        WS_ALERT["Broadcast `alert_notification` via Django Channels"]
+        HTML_TEMPLATE["Render critical_alert.html Template\nwith Equipment Name, Timestamp, Anomaly Score"]
+        SEND_EMAIL["Dispatch via Django send_mail (SMTP Relay)"]
+        WS_ALERT["Broadcast alert_notification via Django Channels"]
 
         CRIT_FLAG -- Yes --> ALERT_SERVICE
         ALERT_SERVICE --> QUERY_RECIPIENTS
@@ -670,23 +670,23 @@ sequenceDiagram
 
     Note over Sensor,Dashboard: Step A: Telemetry Sampling & Real-Time Ingestion (Every ~30s)
     Sensor->>ESP: Read Accelerometer (X,Y,Z), Voltage, Temperature
-    ESP->>Broker: MQTT PUBLISH `upemba/sensors/EQUIP-INV-001/telemetry` (QoS 0)
+    ESP->>Broker: MQTT PUBLISH upemba/sensors/EQUIP-INV-001/telemetry (QoS 0)
     Broker->>Listener: On-Message Callback (JSON Payload)
-    Listener->>DB: INSERT `SensorReading` row
+    Listener->>DB: INSERT SensorReading row
     Listener->>Channels: group_send('global_telemetry', 'telemetry_reading')
     Channels-->>Dashboard: WebSocket Push: Update Live Charts & 3D Canvas
 
     Note over Worker,Tech: Step B: Asynchronous Analytics & Predictive Forecasting (Every ~60s)
-    Worker->>DB: SELECT last 40 `SensorReading` records
+    Worker->>DB: SELECT last 40 SensorReading records
     Worker->>Worker: Preprocess & Normalize Features
     Worker->>Worker: Layer 1: Isolation Forest Anomaly Scoring
     Worker->>Worker: Layer 2: Holt's Linear Trend Extrapolation (H=6)
-    Worker->>DB: INSERT `HealthStatus` assessment
+    Worker->>DB: INSERT HealthStatus assessment
     Worker->>Channels: group_send('global_telemetry', 'health_update')
     Channels-->>Dashboard: WebSocket Push: Update Health Status & Forecast Horizon
 
     opt Critical State Triggered (Score < -0.15)
-        Worker->>Worker: Render `critical_alert.html` template
+        Worker->>Worker: Render critical_alert.html template
         Worker->>Tech: Dispatch SMTP Email Alert
         Worker->>Channels: group_send('global_telemetry', 'alert_notification')
         Channels-->>Dashboard: WebSocket Push: Display Critical Alert Banner
@@ -710,18 +710,18 @@ sequenceDiagram
     participant Browser as Web Browser
     participant App as Next.js Single Page App
     participant Cache as TanStack React Query Cache
-    participant Auth as JWT Storage (`js-cookie`)
-    participant API as Django REST API (`/api/`)
+    participant Auth as JWT Storage (js-cookie)
+    participant API as Django REST API (/api/)
     participant DB as SQLite Database
 
-    Operator->>Browser: Access `/dashboard/predictions`
+    Operator->>Browser: Access /dashboard/predictions
     Browser->>App: Mount Predictions Page Component
-    App->>Cache: Check Cache for `health-status`
+    App->>Cache: Check Cache for health-status
     
     alt Cache Miss / Stale Data (>30s)
-        App->>Auth: Retrieve JWT `access_token`
-        App->>API: GET `/api/health-status/?equipment=EQUIP-INV-001` (Bearer Token)
-        API->>DB: Query `telemetry_healthstatus` (ORDER BY -prediction_timestamp)
+        App->>Auth: Retrieve JWT access_token
+        App->>API: GET /api/health-status/?equipment=EQUIP-INV-001 (Bearer Token)
+        API->>DB: Query telemetry_healthstatus (ORDER BY -prediction_timestamp)
         DB-->>API: Return Records & Forecast JSON
         API-->>App: 200 OK (Paginated JSON Response)
         App->>Cache: Populate Cache with New Data
@@ -753,18 +753,18 @@ flowchart TD
             PWR_SUPPLY["5V DC-DC Buck Converter / USB Power Bank"]
             
             PWR_SUPPLY --> ESP_DEV
-            MPU_DEV -->|I2C 3.3V| ESP_DEV
+            MPU_DEV -->|"I2C 3.3V"| ESP_DEV
         end
     end
 
     subgraph EdgeControlRoom ["2. Edge Site Gateway (Solar Station Control Room)"]
-        WIFI_ROUTER["Local Wi-Fi Router / Access Point\nSubnet: `192.168.1.0/24`\nSSID: `Upemba-IoT-Net`"]
+        WIFI_ROUTER["Local Wi-Fi Router / Access Point\nSubnet: 192.168.1.0/24\nSSID: Upemba-IoT-Net"]
         
-        subgraph GatewayBox ["Raspberry Pi 4B Gateway Station (`192.168.1.76`)"]
+        subgraph GatewayBox ["Raspberry Pi 4B Gateway Station (192.168.1.76)"]
             MOSQ_DAEMON["Mosquitto MQTT Broker (Port 1883)"]
             DAPHNE_DAEMON["Daphne ASGI Web Server (Port 8000)"]
             Q_DAEMON["Django Q2 Worker Cluster (2 Processes)"]
-            SQLITE_FILE["SQLite 3 Database File (`db.sqlite3`)"]
+            SQLITE_FILE["SQLite 3 Database File (db.sqlite3)"]
             LOCAL_SMTP["Postfix Local Mail Relay (Port 25)"]
 
             DAPHNE_DAEMON <--> SQLITE_FILE
@@ -776,12 +776,12 @@ flowchart TD
         WIFI_ROUTER <--> DAPHNE_DAEMON
     end
 
-    ESP_DEV -->|802.11 b/g/n Wi-Fi| WIFI_ROUTER
+    ESP_DEV -->|"802.11 b/g/n Wi-Fi"| WIFI_ROUTER
 
     subgraph OperatorTerminals ["3. Client Terminals (Laptops / Tablets)"]
-        CLIENT_DEVICE["Field Operator Terminal (`192.168.1.50 - 99`)\n- Web Browser (Chromium / Firefox / Safari)\n- Next.js Single Page Application (Port 3000)"]
+        CLIENT_DEVICE["Field Operator Terminal (192.168.1.50 - 99)\n- Web Browser (Chromium / Firefox / Safari)\n- Next.js Single Page Application (Port 3000)"]
         
-        CLIENT_DEVICE <-->|Wi-Fi Connection| WIFI_ROUTER
+        CLIENT_DEVICE <-->|"Wi-Fi Connection"| WIFI_ROUTER
     end
 ```
 
@@ -799,23 +799,23 @@ flowchart TD
 flowchart TD
     subgraph NetworkSegment ["Local Area Network Boundary (192.168.1.0/24)"]
         
-        subgraph NodeSubnet ["Sensor Node IP Range (`192.168.1.100 - 150`)"]
+        subgraph NodeSubnet ["Sensor Node IP Range (192.168.1.100 - 150)"]
             ESP_NODES["ESP32 Microcontrollers\n- Static / DHCP IP Allocation\n- Port: Outbound TCP"]
         end
 
-        subgraph GatewaySubnet ["Edge Gateway Node (`192.168.1.76`)"]
+        subgraph GatewaySubnet ["Edge Gateway Node (192.168.1.76)"]
             GATEWAY_HOST["Raspberry Pi 4B\n- MQTT Ingestion Port: 1883\n- HTTP/REST API Port: 8000\n- WebSocket (WSS/WS) Port: 8000\n- SMTP Relay Port: 25 / 587"]
         end
 
-        subgraph ClientSubnet ["Operator Terminal Range (`192.168.1.50 - 99`)"]
+        subgraph ClientSubnet ["Operator Terminal Range (192.168.1.50 - 99)"]
             CLIENT_HOSTS["Field Tablets, Laptops, Mobile Terminals\n- Outbound HTTP to Port 8000\n- Outbound WS to Port 8000\n- Next.js Web Server Port 3000"]
         end
     end
 
-    ESP_NODES ===|MQTT over TCP (Port 1883)| GATEWAY_HOST
-    CLIENT_HOSTS ===|HTTP/1.1 REST API (Port 8000)| GATEWAY_HOST
-    CLIENT_HOSTS ===|Full-Duplex WebSocket (Port 8000)| GATEWAY_HOST
-    GATEWAY_HOST ===|SMTP Email Notifications (Port 25/587)| CLIENT_HOSTS
+    ESP_NODES -->|"MQTT over TCP - Port 1883"| GATEWAY_HOST
+    CLIENT_HOSTS -->|"HTTP/1.1 REST API - Port 8000"| GATEWAY_HOST
+    CLIENT_HOSTS <-->|"Full-Duplex WebSocket - Port 8000"| GATEWAY_HOST
+    GATEWAY_HOST -->|"SMTP Email Notifications - Port 25/587"| CLIENT_HOSTS
 ```
 
 <div align="center">
@@ -832,12 +832,12 @@ flowchart TD
 flowchart TD
     subgraph PerimeterSec ["1. Perimeter & Network Isolation"]
         AIR_GAP["Isolated Physical LAN / Local Subnet (Zero Cloud Dependency)"]
-        CORS_FILTER["Django CORS Middleware (`CORS_ALLOWED_ORIGINS` Validation)"]
-        HOST_FILTER["Django `ALLOWED_HOSTS` Restriction"]
+        CORS_FILTER["Django CORS Middleware (CORS_ALLOWED_ORIGINS Validation)"]
+        HOST_FILTER["Django ALLOWED_HOSTS Restriction"]
     end
 
     subgraph IngestionSec ["2. Telemetry Ingestion Security"]
-        TOPIC_VAL["Strict Topic Hierarchy Enforcement (`upemba/sensors/+/telemetry`)"]
+        TOPIC_VAL["Strict Topic Hierarchy Enforcement (upemba/sensors/+/telemetry)"]
         PAYLOAD_VAL["JSON Schema Validation & Missing-Key Rejection"]
         BOUND_CHECK["Sensor Value Boundary Clamping (Reject Impossible Voltages/Temps)"]
     end
@@ -845,13 +845,13 @@ flowchart TD
     subgraph AuthSec ["3. Authentication & Access Control"]
         JWT_AUTH["SimpleJWT Bearer Token Authentication (60-minute Expiry)"]
         REFRESH_ROT["Refresh Token Rotation & Automatic Blacklisting"]
-        RBAC_MODEL["Role-Based Access Control (`ADMIN`, `TECHNICIAN`, `RANGER`)"]
+        RBAC_MODEL["Role-Based Access Control (ADMIN, TECHNICIAN, RANGER)"]
         EMAIL_OTP["Cryptographic 4-Byte Hex Email OTP Account Activation"]
         PW_HASH["Argon2 / PBKDF2 Password Cryptographic Hashing"]
     end
 
     subgraph PersistenceSec ["4. Data & Configuration Protection"]
-        ENV_SECRETS["Environment Variable Isolation in `.env.local`"]
+        ENV_SECRETS["Environment Variable Isolation in .env.local"]
         PARAM_SQL["Parameterized ORM Queries (SQL Injection Immunity)"]
         READ_ONLY_API["Read-Only ViewSets on Telemetry & Health Endpoints"]
     end
@@ -878,14 +878,14 @@ flowchart TD
     START_MONITOR(["Continuous Fault Detection Active"]) --> DETECT{"Identify Fault Event"}
 
     DETECT -- "Wi-Fi Packet Dropout / Incomplete Stream" --> FAULT_1["Fault 1: Missing Sensor Reading"]
-    DETECT -- "Corrupted / Non-JSON MQTT Byte Stream" --> FAULT_2["Fault 2: Malformed Payload"]
+    DETECT -- "Corrupted / Non-JSON MQTT Byte Stream" --> FAULT_2["Fault 2: Malformed JSON Payload"]
     DETECT -- "Sensor Detachment / Loose MPU-6050" --> FAULT_3["Fault 3: Physical Transducer Error"]
     DETECT -- "Database Empty / Insufficient Records (<10)" --> FAULT_4["Fault 4: Insufficient Baseline"]
     DETECT -- "SMTP Server Unreachable / Mail Down" --> FAULT_5["Fault 5: Email Dispatch Failure"]
     DETECT -- "Client Browser Disconnects from WebSocket" --> FAULT_6["Fault 6: WebSocket Link Drop"]
 
     FAULT_1 --> REC_1["Pandas Linear Interpolation + Forward/Backward Fill Imputation in ML Engine"]
-    FAULT_2 --> REC_2["`json.JSONDecodeError` Caught Gracefully in Exception Block; Listener Continues Running"]
+    FAULT_2 --> REC_2["JSON decode error caught gracefully in exception block; listener continues running"]
     FAULT_3 --> REC_3["Isolation Forest Flags Anomaly; Technician SOP Identifies Detached Sensor Module"]
     FAULT_4 --> REC_4["ML Evaluation Skips Gracefully with Informational Log until 10 Readings Accumulate"]
     FAULT_5 --> REC_5["SMTP Exception Caught; Dev OTP/Alert Output to Console; Background Task Survives"]
@@ -915,8 +915,8 @@ stateDiagram-v2
     
     state NodeBoot {
         [*] --> HardwareInit: Initialize I2C Bus & ADC GPIO
-        HardwareInit --> Wi-FiConnect: Connect to Local Wi-Fi AP
-        Wi-FiConnect --> BrokerConnect: Connect to Mosquitto Port 1883
+        HardwareInit --> WiFiConnect: Connect to Local Wi-Fi AP
+        WiFiConnect --> BrokerConnect: Connect to Mosquitto Port 1883
     }
 
     NodeBoot --> IngestionActive: Broker Handshake Success
