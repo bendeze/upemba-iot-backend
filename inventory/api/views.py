@@ -1,3 +1,5 @@
+import uuid
+from django.db import models
 from rest_framework import viewsets, filters
 
 from inventory.models import Equipment
@@ -11,7 +13,7 @@ class EquipmentViewSet(viewsets.ModelViewSet):
     queryset = Equipment.objects.all().order_by("id")
     serializer_class = EquipmentSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ["name", "mac_address", "equipement_type", "location_notes"]
+    search_fields = ["name", "mac_address", "equipment_type", "location_notes"]
 
 
 class MaintenanceLogViewSet(viewsets.ModelViewSet):
@@ -25,7 +27,13 @@ class MaintenanceLogViewSet(viewsets.ModelViewSet):
         end_date = self.request.query_params.get("end_date")
         
         if equipment:
-            queryset = queryset.filter(equipment_id=equipment)
+            try:
+                val = uuid.UUID(str(equipment))
+                queryset = queryset.filter(equipment_id=val)
+            except (ValueError, AttributeError):
+                queryset = queryset.filter(
+                    models.Q(equipment__mac_address=equipment) | models.Q(equipment__name__iexact=equipment)
+                )
         if start_date:
             queryset = queryset.filter(timestamp__gte=start_date)
         if end_date:
